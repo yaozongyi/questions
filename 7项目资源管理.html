@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>项目资源管理</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            margin: 0;
+            background: #ffffff;
+            color: #111
+        }
+
+        .wrap {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 16px
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .08)
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 8px 8px 0
+        }
+
+        .pill {
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: #555
+        }
+
+        .progress {
+            height: 8px;
+            background: #eee;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 10px 0 14px
+        }
+
+        .bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #22d3ee, #22c55e)
+        }
+
+        .q {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 8px 0 10px
+        }
+
+        .opt {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            background: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s
+        }
+
+        .opt.correct {
+            border-color: #22c55e;
+            background: #e6f7ec
+        }
+
+        .opt.wrong {
+            border-color: #ef4444;
+            background: #fde8e8
+        }
+
+        .btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        button {
+            appearance: none;
+            border: 1px solid #bbb;
+            background: #f3f3f3;
+            color: #111;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-weight: 600;
+            cursor: pointer
+        }
+
+        button.primary {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: #fff
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed
+        }
+
+        .muted {
+            color: #777;
+            font-size: 12px
+        }
+
+        .feedback {
+            font-size: 14px;
+            margin-top: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #fafafa
+        }
+
+        .feedback.ok {
+            color: #0f5132;
+            background: #e9f7ef;
+            border-color: #badbcc
+        }
+
+        .feedback.err {
+            color: #842029;
+            background: #fcebea;
+            border-color: #f5c2c7
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="card">
+        <div class="row">
+            <h1>测验题库（即时判题）</h1>
+            <span id="score" class="pill">得分：0</span>
+            <span id="time" class="pill">时间：00:00</span>
+        </div>
+        <div class="progress">
+            <div id="bar" class="bar"></div>
+        </div>
+        <div id="mount"></div>
+        <div class="btns">
+            <button id="prev">上一题</button>
+            <button id="next" class="primary">下一题</button>
+        </div>
+    </div>
+</div>
+
+<!-- 题库内嵌：按这个格式增删题即可 -->
+<script id="qdata" type="application/json">
+    [
+        {
+            "id": "001",
+            "type": "single",
+            "prompt": "作为项目经理，你不是很了解每位成员所负责的工作内容，项目团队也觉得对他们的工作内容缺乏了解。哪项工具可以帮助明确这些问题？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "网络图"
+                },
+                {
+                    "key": "B",
+                    "text": "流程图"
+                },
+                {
+                    "key": "C",
+                    "text": "层级式组织图"
+                },
+                {
+                    "key": "D",
+                    "text": "RACI 图"
+                }
+            ],
+            "answer": "D",
+            "explanation": "职责分配矩阵 RAM，也被称为 RACI，以矩阵的形式显示了分配给每个工作包的项目资源，用于说明工作包或活动与项目团队成员之间的关系。参考 PMBOK Guide 6th p317."
+        },
+        {
+            "id": "002",
+            "type": "single",
+            "prompt": "某本质为职能型架构的组织组建了一个特殊的项目团队来承担一个关键项目。该团队具有项目式组织团队的诸多特征，也有一个专职的项目经理。该组织架构为：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "项目式组织"
+                },
+                {
+                    "key": "B",
+                    "text": "职能式组织"
+                },
+                {
+                    "key": "C",
+                    "text": "强矩阵型组织"
+                },
+                {
+                    "key": "D",
+                    "text": "复合型组织"
+                }
+            ],
+            "answer": "D",
+            "explanation": "组织结构的主体为职能型，可是又有按项目式来组织的团队，这是典型的复合型组织的特征。现实生活中，最常见的组织结构类型就是复合型。"
+        },
+        {
+            "id": "003",
+            "type": "single",
+            "prompt": "项目进行中，项目赞助人与执行组织某经理之间有冲突。你对该情景的建议是：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "项目经理必须介入并处理相关方的期望。项目相关方对项目有不同的目标与利益"
+                },
+                {
+                    "key": "B",
+                    "text": "项目经理必须介入并处理相关方的期望。项目相关方对项目的目标与利益相同"
+                },
+                {
+                    "key": "C",
+                    "text": "应以有利于赞助人的方式解决，因为赞助人提供项目资金"
+                },
+                {
+                    "key": "D",
+                    "text": "应以有利于执行组织经理的方式解决，因为他们执行项目，因此需要更好的照顾"
+                }
+            ],
+            "answer": "A",
+            "explanation": "项目经理应了解，项目相关方之间具有相互冲突的需求和目标。项目经理有责任管理这些相互冲突的需求和目标，并管理相关方期望。排除选项 B，选项 C 和 D 都不符合我们的基本理念。"
+        },
+        {
+            "id": "004",
+            "type": "single",
+            "prompt": "建设项目团队过程中建议使用哪种工具？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "绩效评估、奖励与表彰以及团队建设"
+                },
+                {
+                    "key": "B",
+                    "text": "培训、团队建设以及基本规则"
+                },
+                {
+                    "key": "C",
+                    "text": "团队建设、创建组织图以及评估个人绩效"
+                },
+                {
+                    "key": "D",
+                    "text": "设立基本规则，并依此规则评估团队成员"
+                }
+            ],
+            "answer": "B",
+            "explanation": "过程定义，参考 PMBOK Guide 6th p336"
+        },
+        {
+            "id": "005",
+            "type": "single",
+            "prompt": "资源的层次式结构，按照资源类别和资源类型组织，用于资源平衡进度表，是：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "团队结构"
+                },
+                {
+                    "key": "B",
+                    "text": "资源库"
+                },
+                {
+                    "key": "C",
+                    "text": "组织分解结构"
+                },
+                {
+                    "key": "D",
+                    "text": "资源分解结构"
+                }
+            ],
+            "answer": "D",
+            "explanation": "资源分解结构是按资源类别和类型，对团队和实物资源的层级列表，用于规划、管理和控制项目工作。参考 PMBOK Guide 6th p316."
+        },
+        {
+            "id": "006",
+            "type": "single",
+            "prompt": "在获得项目章程的时候，项目经理立即组建了项目团队开始执行项目工作。这样做对吗？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "对，组建项目团队原则上是启动过程组的活动"
+                },
+                {
+                    "key": "B",
+                    "text": "对，项目经理应该在项目一开始就组建团队"
+                },
+                {
+                    "key": "C",
+                    "text": "不对，提供项目团队是项目赞助人的职责"
+                },
+                {
+                    "key": "D",
+                    "text": "不对，组建项目团队原则上是执行过程组的活动"
+                }
+            ],
+            "answer": "D",
+            "explanation": "项目章程中也许会指定几位关键的项目成员，但组建项目团队应该在规划资源管理之后的执行过程组中。选项 C 错，因为提供团队成员不是项目赞助人的责任"
+        },
+        {
+            "id": "007",
+            "type": "single",
+            "prompt": "在矩阵式组织中，团队成员既要向职能经理报告，也要向项目经理报告。一般来说，应该有谁来管理这种双重汇报关系？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "职能经理"
+                },
+                {
+                    "key": "B",
+                    "text": "人力资源经理"
+                },
+                {
+                    "key": "C",
+                    "text": "团队成员"
+                },
+                {
+                    "key": "D",
+                    "text": "项目经理"
+                }
+            ],
+            "answer": "D",
+            "explanation": "在矩阵组织中，团队成员需要同时对项目经理和职能经理负责，这种双重汇报关系让团队管理变得更加复杂。一般而言，应该由项目经理负责管理这种双重汇报关系。"
+        },
+        {
+            "id": "008",
+            "type": "single",
+            "prompt": "项目执行过程中，你决定有几张图表来显示项目成本和进度的状态，显示特定的关键数据，并在一个特定的会议室召集团队会议。这个地方被称为：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "项目团队角"
+                },
+                {
+                    "key": "B",
+                    "text": "团队会议室"
+                },
+                {
+                    "key": "C",
+                    "text": "团队作战室"
+                },
+                {
+                    "key": "D",
+                    "text": "项目团队室"
+                }
+            ],
+            "answer": "B",
+            "explanation": "集中办公可借助团队会议室 team meeting room, 有时也被称为作战室 war room. 选项 C 不对，英文原文是 team battle room, 没有这个说法。参考 PMBOK Guide 6th p340."
+        },
+        {
+            "id": "009",
+            "type": "single",
+            "prompt": "你所管理的项目有一个工程师团队，两个工程师的意见经常不一致。你要求他们相互讨论来解决，但还是没有效果。接着你参与进来，基于对情况的分析，建议他们在工作方式上做些改变，可是依然没有效果。你发现这个问题已经开始影响到项目进度了，接下来的行动方案是：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "必要的话采取惩戒性的行动，因为项目的需求没有得到满足"
+                },
+                {
+                    "key": "B",
+                    "text": "什么也不做。团队成员之间有不同意见是健康的"
+                },
+                {
+                    "key": "C",
+                    "text": "找这两个团队成员谈话，要求他们友好地自己解决问题"
+                },
+                {
+                    "key": "D",
+                    "text": "确保他们工作不同班次，因此相互之间就没有冲突"
+                }
+            ],
+            "answer": "A",
+            "explanation": "成功的冲突管理可提高生产力，改进工作关系。同时，如果管理得当，意见分歧有利于提高创造力和改进决策。假如意见分歧成为负面因素，应该首先由项目团队成员负责解决；如果冲突升级，项目经理应提供协助，促成满意的解决方案，采用直接和合作的方式，尽早并且通常在私下处理冲突。如果破坏性冲突继续存在，则可使用正式程序，包括采取惩戒措施。参考 PMBOK Guide 6th p348."
+        },
+        {
+            "id": "010",
+            "type": "single",
+            "prompt": "与联盟或其他雇员团体之间的契约协议可能导致某些特定角色或报告关系。这是哪种例子？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "把关机制"
+                },
+                {
+                    "key": "B",
+                    "text": "强制性的资源规划"
+                },
+                {
+                    "key": "C",
+                    "text": "限制人力资源规划过程的制约因素"
+                },
+                {
+                    "key": "D",
+                    "text": "政治"
+                }
+            ],
+            "answer": "C",
+            "explanation": "所有的契约协议都具备特定的约束力，应该被视为制约因素。"
+        },
+        {
+            "id": "011",
+            "type": "single",
+            "prompt": "你所负责的项目刚开始不久。在组建项目团队时，你发现某关键项目工作需要某职能部门的专家才能完成。然而由于你这个项目获利能力有限，你知道职能经理并不是很愿意给你资源。在这种情况下，你该使用下列哪种技术？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "组建"
+                },
+                {
+                    "key": "B",
+                    "text": "胁迫"
+                },
+                {
+                    "key": "C",
+                    "text": "政治"
+                },
+                {
+                    "key": "D",
+                    "text": "谈判"
+                }
+            ],
+            "answer": "D",
+            "explanation": "要获得组织资源，需要职能经理谈判。确保项目在要求的时限内获得最佳资源，直到完成职责。参考 PMBOK Guide 6th p332."
+        },
+        {
+            "id": "012",
+            "type": "single",
+            "prompt": "你刚加入某公司任职高级项目经理。该公司没有针对初级项目经理的培训项目，有些初级项目经理要求你协助处理一些与工作有关的问题。你觉得如果有适当的引导，这种状况将得以改善。下列哪种做法与你的工作职责不符？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "什么也不做，辅导其他员工不是你的工作职责"
+                },
+                {
+                    "key": "B",
+                    "text": "建议其他高级项目经理和你一起开发辅导项目"
+                },
+                {
+                    "key": "C",
+                    "text": "为初级项目经理制定培训计划"
+                },
+                {
+                    "key": "D",
+                    "text": "为那些寻求帮助的员工提供定期的辅导"
+                }
+            ],
+            "answer": "A",
+            "explanation": "丰富项目管理知识、传播项目管理知识是对项目管理者职业行为的要求。"
+        },
+        {
+            "id": "013",
+            "type": "single",
+            "prompt": "项目团队中有 2 个人赢了百万大乐透。虽然他们很喜欢项目的工作，还是决定退休。你该计划哪些更新？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "退休计划"
+                },
+                {
+                    "key": "B",
+                    "text": "资源可用性文件"
+                },
+                {
+                    "key": "C",
+                    "text": "沟通计划"
+                },
+                {
+                    "key": "D",
+                    "text": "资源管理计划"
+                }
+            ],
+            "answer": "D",
+            "explanation": "作为项目管理计划的一部分，资源管理计划提供了关于如何分类、分配、管理和释放项目资源的指南。参考 PMBOK Guide 6th p318-319."
+        },
+        {
+            "id": "014",
+            "type": "single",
+            "prompt": "你工作于某呼叫中心电话分配升级项目。由于呼叫中心经理负责控制预算，你发现获得项目资源以及让资源完成工作都非常困难。这是哪种组织结构类型？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "平衡矩阵"
+                },
+                {
+                    "key": "B",
+                    "text": "职能式"
+                },
+                {
+                    "key": "C",
+                    "text": "强矩阵"
+                },
+                {
+                    "key": "D",
+                    "text": "项目式"
+                }
+            ],
+            "answer": "B",
+            "explanation": "由职能经理负责控制预算，同时还控制资源，这至少是个弱矩阵。题中给出了职能式这个选项，最好。参考 PMBOK Guide 6th p47."
+        },
+        {
+            "id": "015",
+            "type": "single",
+            "prompt": "项目绩效评估不同于团队绩效评价。项目绩效评估着重于：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "降低员工离职率"
+                },
+                {
+                    "key": "B",
+                    "text": "团队建设活动"
+                },
+                {
+                    "key": "C",
+                    "text": "团队成员在项目中的表现"
+                },
+                {
+                    "key": "D",
+                    "text": "对项目团队有效性的评价"
+                }
+            ],
+            "answer": "C",
+            "explanation": "随着项目团队建设工作（如培训、团队建设和集中办公等）的开展，项目管理团队应该对项目团队的有效性进行正式或非正式的评价。评估团队有效性的指标包括：个人技能的改进、团队能力的改进、团队成员离职率的降低，以及团队凝聚力的加强。参考 PMBOK Guide 6thp343"
+        },
+        {
+            "id": "016",
+            "type": "single",
+            "prompt": "你为某进行中的项目组建团队，正在看一张图表，显示编程工作由系统开发部门负责，基础架构由架构系统部门负责，而客户联络由呼叫中心负责。这是哪种图表？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "RACI"
+                },
+                {
+                    "key": "B",
+                    "text": "组织分解结构 (OBS)"
+                },
+                {
+                    "key": "C",
+                    "text": "工作分解结构 (WBS)"
+                },
+                {
+                    "key": "D",
+                    "text": "资源分解结构 (RBS)"
+                }
+            ],
+            "answer": "A",
+            "explanation": "职责分配矩阵(RAM)，显示了分配给每个工作包的项目资源，用于说明工作包或活动与项目团队成员之间的关系。如 RACI，参考 PMBOK Guide 6th p317."
+        },
+        {
+            "id": "017",
+            "type": "single",
+            "prompt": "项目中清晰的奖励标准和规划好的系统促进进并强化了期望的行为。预先做好奖励的时间计划也能保证奖励如期实施。这通常是哪个的一部分？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "项目公告板"
+                },
+                {
+                    "key": "B",
+                    "text": "公司人力资源计划"
+                },
+                {
+                    "key": "C",
+                    "text": "沟通管理计划"
+                },
+                {
+                    "key": "D",
+                    "text": "资源管理计划"
+                }
+            ],
+            "answer": "D",
+            "explanation": "资源管理计划中包括认可计划，定义将给予团队成员哪些认可和奖励，以及何时给予。参考PMBOK Guide 6th p318-319."
+        },
+        {
+            "id": "018",
+            "type": "single",
+            "prompt": "在建立项目团队过程中，项目经理规划了一些团队建设活动。虽然团队建设活动应该贯穿于项目生命周期的始终，但是在 ______ 效果更好。",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "需要的时候"
+                },
+                {
+                    "key": "B",
+                    "text": "在项目生命周期结束的时候"
+                },
+                {
+                    "key": "C",
+                    "text": "在项目生命周期开始的时候"
+                },
+                {
+                    "key": "D",
+                    "text": "在项目生命周期中间的时候"
+                }
+            ],
+            "answer": "C",
+            "explanation": "团队建设在项目前期必不可少，但它更是个持续的过程。项目环境的变化不可避免，要有效应对这些变化，就需要持续不断地开展团队建设。项目经理应该持续地监督团队机能和绩效，确定是否需要采取措施来预防或纠正各种团队问题。参考 PMBOK Guide 6th p341."
+        },
+        {
+            "id": "019",
+            "type": "single",
+            "prompt": "你发现难以精确估算计划活动“安装数据中心机架”所需的资源。为了在呈交给人力资源部的报告中罗列较为精确的人力资源数量和技能要求，你决定将“安装数据中心机架”活动进一步分解为更小的组成部分，如：设备开箱、设备检查、建造框架以及安装机架等，估算每一个组成部分所需要的资源然后累加，这是：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "累加估算"
+                },
+                {
+                    "key": "B",
+                    "text": "他因方案分析"
+                },
+                {
+                    "key": "C",
+                    "text": "自下而上的估算"
+                },
+                {
+                    "key": "D",
+                    "text": "滚动式估算"
+                }
+            ],
+            "answer": "C",
+            "explanation": "自下而上估算是一种估算项目持续时间或成本的方法，通过从下到上逐层汇总 WBS 组成部分的估算而得到项目估算。如果无法以合理的可信度对活动持续时间进行估算，则应将活动中的工作进一步细化，然后估算具体的持续时间，接着再汇总这些资源需求估算，得到每个活动的持续时间。参考 PMBOK Guide 6th p202."
+        },
+        {
+            "id": "020",
+            "type": "single",
+            "prompt": "长时间工作以满足最终期限，以及来自于管理层的巨大压力都将导致项目团队士气降低，团队成员之间也经常在资源和优先级方面有冲突。该如何化解这些非破坏性的冲突？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "利用惩戒性的行动"
+                },
+                {
+                    "key": "B",
+                    "text": "当差异演变成负面因素时，项目团队成员负有责任自己化解冲突"
+                },
+                {
+                    "key": "C",
+                    "text": "将冲突上报到管理层"
+                },
+                {
+                    "key": "D",
+                    "text": "仲裁"
+                }
+            ],
+            "answer": "B",
+            "explanation": "成功的冲突管理可提高生产力，改进工作关系。同时，如果管理得当，意见分歧有利于提高创造力和改进决策。假如意见分歧成为负面因素，应该首先由项目团队成员负责解决；如果冲突升级，项目经理应提供协助，促成满意的解决方案，采用直接和合作的方式，尽早并且通常在私下处理冲突。如果破坏性冲突继续存在，则可使用正式程序，包括采取惩戒措施。参考 PMBOK Guide 6th p348."
+        },
+        {
+            "id": "021",
+            "type": "single",
+            "prompt": "下列哪种化解冲突的技术不能带来长期的解决方案？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "解决问题"
+                },
+                {
+                    "key": "B",
+                    "text": "强制"
+                },
+                {
+                    "key": "C",
+                    "text": "缓和"
+                },
+                {
+                    "key": "D",
+                    "text": "妥协"
+                }
+            ],
+            "answer": "C",
+            "explanation": "有五种常用的冲突解决方法，分别是撤退/回避、缓和/包容、妥协/调解、强迫/命令，以及合作/解决问题。前面的两种没有解决方案，后面的三种有解决方案。参考 PMBOK Guide 6thp349."
+        },
+        {
+            "id": "022",
+            "type": "single",
+            "prompt": "你组建了一个虚拟团队，成员来自四个不同的国家。在建设项目团队过程中，下列哪项将不会是一个障碍？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "时区差别"
+                },
+                {
+                    "key": "B",
+                    "text": "工具技术不同"
+                },
+                {
+                    "key": "C",
+                    "text": "文化差异"
+                },
+                {
+                    "key": "D",
+                    "text": "成员希望在家工作"
+                }
+            ],
+            "answer": "D",
+            "explanation": "虚拟团队管理有独特的优势，例如能够利用项目团队的专业技术，即使相应的专家不在同一地理区域；将在家办公的员工纳入团队；以及将行动不便者或残疾人纳入团队。而虚拟团队管理面临的挑战主要在于沟通，包括可能产生孤立感、团队成员之间难以分享知识和经验、难以跟进进度和生产率，以及可能存在时区和文化差异。参考 PMBOK Guide 6th p311."
+        },
+        {
+            "id": "023",
+            "type": "single",
+            "prompt": "下列哪项不属于软技能？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "情商 EI"
+                },
+                {
+                    "key": "B",
+                    "text": "智商 IQ"
+                },
+                {
+                    "key": "C",
+                    "text": "群体促进技术"
+                },
+                {
+                    "key": "D",
+                    "text": "谈判"
+                }
+            ],
+            "answer": "B",
+            "explanation": "人际关系与团队技能又被称为软技能。软技能包含很多，参考 PMBOK Guide 6th p690。"
+        },
+        {
+            "id": "024",
+            "type": "single",
+            "prompt": "要为项目团队设定明确的期望，下列哪项技能最有用？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "团队建设"
+                },
+                {
+                    "key": "B",
+                    "text": "团队章程"
+                },
+                {
+                    "key": "C",
+                    "text": "人际关系技能"
+                },
+                {
+                    "key": "D",
+                    "text": "集中办公"
+                }
+            ],
+            "answer": "B",
+            "explanation": "团队章程对项目团队成员的可接受行为确定了明确的期望，参考 PMBOK Guide 6th p320."
+        },
+        {
+            "id": "025",
+            "type": "single",
+            "prompt": "有个为冬奥会建造住宅区的项目。虽然已经与当地居民讨论了该项目的影响，但有些店主担心大型商场可能会影响他们的收入，因此，他们希望对大机构的选址有发言权。应采用以下哪一种策略来管理这些店主？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "听他们的，但不要受他们的影响"
+                },
+                {
+                    "key": "B",
+                    "text": "让他们了解情况，并让他们知道，你期待并欢迎他们的参与"
+                },
+                {
+                    "key": "C",
+                    "text": "委派初级团队成员与他们互动"
+                },
+                {
+                    "key": "D",
+                    "text": "阻止他们参加会议或提出请求，因为这会中断项目"
+                }
+            ],
+            "answer": "B",
+            "explanation": "项目的进行对店主的利益有影响，因此他们会关注项目。选项 C 让人觉得是敷衍，不是真正解决问题；选项 D 完全错了，即便有可能中断项目，也是项目经理该处理的问题。"
+        },
+        {
+            "id": "026",
+            "type": "single",
+            "prompt": "项目经理应应 RFP，客户要求列出关键员工的姓名、提供简历，并说明他们为项目工作时间的百分比，所有这些都必须得到客户的批准才能赢得合同。好消息是你赢得了合同，坏消息是，有位职能经理告诉你，由于其他项目需要，某成员需要被替换。担心这个消息会失去客户，你在这种情况下该：",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "与职能经理交谈，要求将建议书中列名的员工分配给你的项目"
+                },
+                {
+                    "key": "B",
+                    "text": "什么也不做，希望分配给项目的员工能够完成该项目工作"
+                },
+                {
+                    "key": "C",
+                    "text": "上报给发起人，因为这会给项目带来风险"
+                },
+                {
+                    "key": "D",
+                    "text": "首先与客户沟通，并获得他们的批准；到底是用替代员工，还是等建议中指定的员工（可能导致延迟进度）"
+                }
+            ],
+            "answer": "C",
+            "explanation": "选项 A 不尊重题干，排除；选项 B 忽略问题，排除；选项 D 有可能，但要等到所有努力都没有效果时才用；选项 C 让管理层了解缺乏资源的后果。"
+        },
+        {
+            "id": "027",
+            "type": "single",
+            "prompt": "在完成工作包期间，出资人要求项目经理汇报项目进度，为了准备报告，项目经理要求所有的团队成员说明工作完成的百分比。有个团队成员从开始就很难管理，当问到工作完成百分比时，他说“什么是完成百分比”。因为厌倦这类内容，项目经理向该成员的老板报告说这个成员不合作。下列哪项最像真实的问题？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "项目经理没有从资源管理者那里真正获得为项目获取资源"
+                },
+                {
+                    "key": "B",
+                    "text": "项目经理没有创建合适的奖励系统来改进他们的合作"
+                },
+                {
+                    "key": "C",
+                    "text": "项目经理应该和团队成员的老板开个会，在团队成员第一次惹麻烦时"
+                },
+                {
+                    "key": "D",
+                    "text": "项目经理没有工作包"
+                }
+            ],
+            "answer": "B",
+            "explanation": "题干表明项目成员缺乏积极性不予合作，可能原因是缺乏奖励表彰制度。首先排除选项 A 和选项 D，选项 C 也不恰当，项目经理应该先想办法解决问题。参考：PMBOK Guide 6th p342-342."
+        },
+        {
+            "id": "028",
+            "type": "single",
+            "prompt": "有个正处在绩效期的团队。一个新成员刚加入这个团队，这个团队将会发生什么？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "团队将继续在绩效期"
+                },
+                {
+                    "key": "B",
+                    "text": "团队将到达形成期"
+                },
+                {
+                    "key": "C",
+                    "text": "团队将到达振荡期"
+                },
+                {
+                    "key": "D",
+                    "text": "取决于这个新成员，如果他很具有合作精神，团队将继续在绩效期"
+                }
+            ],
+            "answer": "B",
+            "explanation": "塔克曼 （Bruce Tuckman) 阶梯理论认为，团队建设通常要经过五个阶段，法分别是：形成、震荡、规范、成熟和解散。参考 PMBOK Guide 6th p338."
+        },
+        {
+            "id": "029",
+            "type": "single",
+            "prompt": "某项目经理管理他的第二个项目，该项目在他的第一个项目启动 1 个月后启动，这两个项目同时进行。虽然他的第一个项目比较小，但这个项目日趋复杂，项目经理感觉需要更多的帮助。项目经理听说公司去年有些项目和他的第二个项目很类似，他应该做什么？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "联系其它项目经理获得他们的帮助"
+                },
+                {
+                    "key": "B",
+                    "text": "从 PMO 获得历史记录和指南"
+                },
+                {
+                    "key": "C",
+                    "text": "等待看项目是否会受到范围增加的影响"
+                },
+                {
+                    "key": "D",
+                    "text": "确保项目的范围得到所有有关方认同"
+                }
+            ],
+            "answer": "B",
+            "explanation": "项目管理办公室 (PMO) 是对与项目相关的治理过程进行标准化，并促进资源、方法论、工具和技术共享的一个组织结构。PMO 的职责范围可大可小，从提供项目管理支持服务，到直接管理一个或多个项目。参考 PMBOK Guide 6th p48."
+        },
+        {
+            "id": "030",
+            "type": "single",
+            "prompt": "项目的 CPI 是 1.02，收益成本率是 1.7，最新的绩效评估发现需要做一些调整。项目开始时团队被安排在新大楼集中办公，每个人都很高兴地评论他们的新设施。赞助人提供了足够的项目支持，只有少许没识别的风险发生。为了改善绩效，项目经理花费项目预算为团队新买了椅子，并在成员的职责上都加上了“资源”两字。下列哪个关于项目或项目经理的说法是正确的？",
+            "options": [
+                {
+                    "key": "A",
+                    "text": "项目经理误解了 Hertzberg 的理论"
+                },
+                {
+                    "key": "B",
+                    "text": "项目较慢，花费了比计划多的费用。项目经理应该更多关注成本"
+                },
+                {
+                    "key": "C",
+                    "text": "项目绩效评估必须找出更多需要调整的"
+                },
+                {
+                    "key": "D",
+                    "text": "项目经理应该对应哪些偏差重要做出更好的判断"
+                }
+            ],
+            "answer": "A",
+            "explanation": "赫尔斯伯格的双因素理论，又称保健-激励理论，认为：保健因素与不满相关，激励因素与满意相关。激励因素基本上都是与工作本身有关的，如兴趣、成就感、责任、前途；保健因素基本上都是与工作环境相关，如薪水、工作环境、工作关系等。买新椅子改善工作环境属于保健因素，不能有效提供绩效，代表项目经理没有真正理解双因素理论。"
+        },
+        [
+            {
+                "id": "031",
+                "type": "single",
+                "prompt": "在项目执行开始，你注意到项目团队成员关于项目工作和成果的复杂程度有不同的看法。你现在应该做什么？",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "给团队成员些时间，编写对项目范围和产品范围的共同理解，即将出现的接口问题稍后可能会解决"
+                    },
+                    {
+                        "key": "B",
+                        "text": "使用风险管理过程来识别和评估由于误解引发的风险，编写个计划来衡量并回应他们"
+                    },
+                    {
+                        "key": "C",
+                        "text": "组织会议来识别解决成员之间的误解，以便尽早避免接口问题，减少成本"
+                    },
+                    {
+                        "key": "D",
+                        "text": "私下会见每个团队成员并告诉他们你的期望和你在团队中期望的氛围"
+                    }
+                ],
+                "answer": "C",
+                "explanation": "本题考的是化解冲突。选项 A 和 B 似乎都是 Avoiding, 选项 C 是 Problem Solving, 选项 D 有点像 Smoothing. 面对/解决问题是最被推荐使用的策略。参考 PMBOK Guide 6th p348-349."
+            },
+            {
+                "id": "032",
+                "type": "single",
+                "prompt": "某个领域的3个高级专家对两个成员的范围不同意。某个指WBS的草稿，需隔离领域的红工作需要领导。另一个说，某个特定的工作包应该做。第三个成员同意另两个的观点。项目经理最好的方式该如何处理冲突？",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "他应该倾听不同观点，确定最好的选择，实施这个选择"
+                    },
+                    {
+                        "key": "B",
+                        "text": "他应该推迟到未来讨论，会见每个人，确定最好的方法"
+                    },
+                    {
+                        "key": "C",
+                        "text": "他应该倾听不同观点，鼓励合理讨论，推动达成共识"
+                    },
+                    {
+                        "key": "D",
+                        "text": "他应该帮助团队关注他们观点一致的方面，使用放松的技术来构建团队"
+                    }
+                ],
+                "answer": "C",
+                "explanation": "选项 A 属于 forcing, 选项 B 属于 avoiding, 选项 C 属于 collaboration, 选项 D 属于 smoothing.选择一个最好的，为 C。参考 PMBOK Guide 6th p349"
+            },
+            {
+                "id": "033",
+                "type": "single",
+                "prompt": "你是电话公司的项目经理，团队正在研究新的服务，工作地点都在一起，且已经进入团队发展的成熟期。一个新成员加入团队，下列哪个说法是正确的？",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "团队发展过程将会从震荡期开始重复"
+                    },
+                    {
+                        "key": "B",
+                        "text": "团队将继续在绩效期"
+                    },
+                    {
+                        "key": "C",
+                        "text": "团队发展过程将会从形成期开始重复"
+                    },
+                    {
+                        "key": "D",
+                        "text": "团队将会从震荡期开始迅速到成熟期"
+                    }
+                ],
+                "answer": "C",
+                "explanation": "按照 Tuckman 的观点，当有新成员加入团队时，将从形成期开始重复。参考 PMBOK Guide6th p338."
+            },
+            {
+                "id": "034",
+                "type": "single",
+                "prompt": "你刚发现你的项目的某个主要分包商提供的成果总是比较晚。这个分包商找到你希望你继续接受延期的成果，作为交换可以降低项目的成本。这是什么列子：",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "面对"
+                    },
+                    {
+                        "key": "B",
+                        "text": "妥协"
+                    },
+                    {
+                        "key": "C",
+                        "text": "调和"
+                    },
+                    {
+                        "key": "D",
+                        "text": "强制"
+                    }
+                ],
+                "answer": "B",
+                "explanation": "双方各让一步，寻找能让各方都在一定程度上满意的方案，是妥协/调解。参考 PMBOK Guide 6th p349."
+            },
+            {
+                "id": "035",
+                "type": "single",
+                "prompt": "矩阵型组织包括职能型和项目型两个共有的特点。在弱矩阵组织中，项目经理的角色像：",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "协调员和联络员"
+                    },
+                    {
+                        "key": "B",
+                        "text": "权力相当大的管理者"
+                    },
+                    {
+                        "key": "C",
+                        "text": "支持人"
+                    },
+                    {
+                        "key": "D",
+                        "text": "职能经理"
+                    }
+                ],
+                "answer": "A",
+                "explanation": "在弱矩阵组织中，通常看不到“项目经理”这个职位，只有联络员或协调员。参考 PMBOK Guide 6th p47."
+            },
+            {
+                "id": "036",
+                "type": "single",
+                "prompt": "资源直方图显示哪些职责分配矩阵没有显示的信息？",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "时间"
+                    },
+                    {
+                        "key": "B",
+                        "text": "活动"
+                    },
+                    {
+                        "key": "C",
+                        "text": "相互关系"
+                    },
+                    {
+                        "key": "D",
+                        "text": "每个活动的负责人"
+                    }
+                ],
+                "answer": "A",
+                "explanation": "资源直方图是按一系列时间段显示某种资源的计划工作时间的条形图，而职责分配矩阵显示Responsible, Accountable, Consult and Inform. 参考 PMBOK Guide 6th p713."
+            },
+            {
+                "id": "037",
+                "type": "single",
+                "prompt": "你现在是某个制药公司的项目经理，此前你已经作为科学家在此行业工作多年。你的下属仰望你的建议和指导。你所谓的权力是：",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "参考"
+                    },
+                    {
+                        "key": "B",
+                        "text": "专家"
+                    },
+                    {
+                        "key": "C",
+                        "text": "合法"
+                    },
+                    {
+                        "key": "D",
+                        "text": "奖励"
+                    }
+                ],
+                "answer": "B",
+                "explanation": "专家权力就是运用知识的力量，题干提到“你的下属仰望你的建议和指导”，说明他们依赖于你的专业素养。参考 PMBOK Guide 6th p63."
+            },
+            {
+                "id": "038",
+                "type": "single",
+                "prompt": "项目由组织中的某个部门管理，通过项目协调员来联络。下列哪个说法更可能是正确的？",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "执行组织是弱矩阵"
+                    },
+                    {
+                        "key": "B",
+                        "text": "执行组织是采用“按项目来管理”"
+                    },
+                    {
+                        "key": "C",
+                        "text": "执行组织是强矩阵"
+                    },
+                    {
+                        "key": "D",
+                        "text": "执行组织是项目型"
+                    }
+                ],
+                "answer": "A",
+                "explanation": "协调员更可能出现于弱矩阵或职能型之中，在平衡矩阵、强矩阵、项目型组织中都称为项目经理。参考 PMBOK Guide 6th p47"
+            },
+            {
+                "id": "039",
+                "type": "single",
+                "prompt": "作为项目经理，什么时候你必须要考虑文化差异？",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "当把项目范围分解创建工作分解结构(WBS)时"
+                    },
+                    {
+                        "key": "B",
+                        "text": "当你分配人力资源到进度活动时"
+                    },
+                    {
+                        "key": "C",
+                        "text": "当你为团队成员要完成的工作编写接受标准时"
+                    },
+                    {
+                        "key": "D",
+                        "text": "在团队建设期间，当你决定奖励和表彰时"
+                    }
+                ],
+                "answer": "D",
+                "explanation": "在管理项目团队过程中，可以正式或非正式的方式做出奖励决定，但在决定认可与奖励时，应考虑文化差异。参考 PMBOK Guide 6th p341."
+            },
+            {
+                "id": "040",
+                "type": "single",
+                "prompt": "项目当中最常见的冲突原因是进度，项目优先级和：",
+                "options": [
+                    {
+                        "key": "A",
+                        "text": "个性"
+                    },
+                    {
+                        "key": "B",
+                        "text": "资源"
+                    },
+                    {
+                        "key": "C",
+                        "text": "成本"
+                    },
+                    {
+                        "key": "D",
+                        "text": "管理"
+                    }
+                ],
+                "answer": "B",
+                "explanation": "冲突的来源包括资源稀缺、进度优先级排序和个人工作风格差异等。参考 PMBOK Guide 6th p348."
+            }
+        ]
+    ]
+
+</script>
+
+<script>
+    const STORAGE_KEY = 'quiz_inline_autojudge_v1';
+    const QUESTIONS = JSON.parse(document.getElementById('qdata').textContent.trim());
+
+    const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    state.index ??= 0;
+    state.answered ??= {};   // { id: 'A' }
+    state.start ??= Date.now();
+
+    const els = {
+        mount: document.getElementById('mount'),
+        bar: document.getElementById('bar'),
+        score: document.getElementById('score'),
+        time: document.getElementById('time'),
+        prev: document.getElementById('prev'),
+        next: document.getElementById('next')
+    };
+
+    function persist() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function fmt(ms) {
+        const s = Math.floor(ms / 1000);
+        return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }
+/*
+    setInterval(() => {
+        els.time.textContent = '时间：' + fmt(Date.now() - state.start);
+    }, 1000);
+*/
+    function computeScore() {
+        let sc = 0;
+        for (const q of QUESTIONS) {
+            if (state.answered[q.id] && state.answered[q.id] === q.answer) {
+                sc++;
+            }
+        }
+        return sc;
+    }
+
+    function render() {
+        const q = QUESTIONS[state.index];
+        els.bar.style.width = (state.index / QUESTIONS.length * 100) + '%';
+        els.prev.disabled = state.index === 0;
+        els.next.textContent = state.index === QUESTIONS.length - 1 ? '完成' : '下一题';
+        els.score.textContent = '得分：' + computeScore();
+
+        // 构建选项 HTML
+        const optsHTML = q.options.map(o => `
+      <label class="opt" data-opt="${o.key}">
+        <input type="radio" name="opt" value="${o.key}" ${state.answered[q.id] === o.key ? 'checked' : ''}>
+        <div><strong>${o.key}.</strong> ${o.text}</div>
+      </label>
+    `).join('');
+
+        els.mount.innerHTML = `
+      <div class="muted">第 ${state.index + 1} / ${QUESTIONS.length} 题 · 编号 ${q.id}</div>
+      <div class="q">${q.prompt}</div>
+      ${optsHTML}
+      <div id="feedback" class="feedback" style="display:none"></div>
+    `;
+
+        // 如果已有选择，直接显示判定
+        if (state.answered[q.id]) {
+            showJudgement(q, state.answered[q.id], false);
+        }
+
+        // 绑定点击：即刻判题
+        document.querySelectorAll('[data-opt]').forEach(el => {
+            el.addEventListener('click', () => {
+                const chosen = el.getAttribute('data-opt');
+                state.answered[q.id] = chosen; // 记录当前选择
+                persist();
+                showJudgement(q, chosen, true); // 即时显示对/错
+                els.score.textContent = '得分：' + computeScore(); // 实时更新得分
+            });
+        });
+    }
+
+    // 显示对错与提示
+    function showJudgement(q, chosen, scrollIntoView) {
+        // 清理状态
+        document.querySelectorAll('.opt').forEach(o => o.classList.remove('correct', 'wrong'));
+        const feedback = document.getElementById('feedback');
+        feedback.classList.remove('ok', 'err');
+
+        // 标颜色
+        document.querySelectorAll('.opt').forEach(o => {
+            const key = o.getAttribute('data-opt');
+            if (key === q.answer) o.classList.add('correct');
+            if (key === chosen && key !== q.answer) o.classList.add('wrong');
+        });
+
+        // 文案
+        if (chosen === q.answer) {
+            feedback.textContent = '✅ 正确';
+            feedback.classList.add('ok');
+            feedback.style.display = 'block';
+        } else {
+            feedback.textContent = q.explanation ? ('❌ 错误：' + q.explanation) : '❌ 错误';
+            feedback.classList.add('err');
+            feedback.style.display = 'block';
+        }
+
+        // 对移动端友好：可选滚动到反馈
+        if (scrollIntoView) {
+            feedback.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }
+    }
+
+    // 翻题
+    els.prev.onclick = () => {
+        if (state.index > 0) {
+            state.index--;
+            persist();
+            render();
+        }
+    };
+    els.next.onclick = () => {
+        if (state.index < QUESTIONS.length - 1) {
+            state.index++;
+            persist();
+            render();
+        } else {
+            els.bar.style.width = '100%';
+            const total = QUESTIONS.length;
+            const got = computeScore();
+            els.mount.innerHTML = `
+        <h2>完成！</h2>
+        <p class="q">总分：${got} / ${total}</p>
+        <button onclick="localStorage.removeItem('${STORAGE_KEY}'); location.reload()">重新开始</button>`;
+            document.querySelector('.btns').style.display = 'none';
+        }
+    };
+
+    render();
+</script>
+</body>
+</html>
